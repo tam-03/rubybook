@@ -4,17 +4,24 @@ require 'optparse'
 require 'etc'
 
 class FileDetails
-  def file_block(file_array)
-    puts "total #{file_array.map { |f| File.stat(f).blocks }.sum}"
+  def file_block(array)
+    block = []
+    array.map do |f|
+      block << File.stat(f).blocks
+    end
+    puts "total #{block.sum}"
   end
 
   def file_type_to_s(f)
     type = File.ftype(f)
-    {
-      "file": '-',
-      "directory": 'd',
-      "link": 'l'
-    }[:"#{type}"]
+    case type
+    when 'file'
+      '-'
+    when 'directory'
+      'd'
+    when 'link'
+      'l'
+    end
   end
 
   def file_parmission(f)
@@ -22,15 +29,21 @@ class FileDetails
     parmission = format('%o', mode)
     pms = parmission.to_s.split(//).to_a
     (0..2).each do |i|
-      pms[i] = {
-        "7": 'rwx',
-        "6": 'rw-',
-        "5": 'r-x',
-        "4": 'r--',
-        "3": '-wx',
-        "2": '-w-',
-        "1": '--x'
-      }[:"#{pms[i]}"]
+      if pms[i] == '7'
+        pms[i] = 'rwx'
+      elsif pms[i] == '6'
+        pms[i] = 'rw-'
+      elsif pms[i] == '5'
+        pms[i] = 'r-x'
+      elsif pms[i] == '4'
+        pms[i] = 'r--'
+      elsif pms[i] == '3'
+        pms[i] = '-wx'
+      elsif pms[i] == '2'
+        pms[i] = '-w-'
+      elsif pms[i] == '1'
+        pms[i] = '--x'
+      end
       return pms.join if i == 2
     end
   end
@@ -61,11 +74,11 @@ class FileDetails
   end
 end
 
-class Ls
-  def l_option(file_array)
+class Ls < FileDetails
+  def l_option(array)
     l_files = FileDetails.new
-    l_files.file_block(file_array)
-    file_array.map do |f|
+    l_files.file_block(array)
+    array.map do |f|
       l_files = FileDetails.new
       print l_files.file_type_to_s(f)
       print l_files.file_parmission(f)
@@ -80,11 +93,11 @@ class Ls
 end
 
 class Print < Ls
-  def print_row(file_array)
-    str_max_length = file_array.map(&:size).max + 2
+  def print_row(array)
+    str_max_length = array.map(&:size).max + 2
     (0..6).map do |num|
       lines = []
-      file_array.each_slice(7) do |files|
+      array.each_slice(7) do |files|
         lines << files[num]
       end
       lines.map do |file|
