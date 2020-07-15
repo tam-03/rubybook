@@ -37,7 +37,33 @@ class WcCommand
         View.new.print_wc(input_detail, 2)
       end
     elsif @file.size <= 2
-      MultiInpttedFile.new.multi_file_view
+      lines = []
+      words = []
+      bytes = []
+      total = []
+      ARGV.map {|file_name| 
+        input = InputtedFile.new
+        input_detail = [
+          input.generate_number_of_lines(file_name),
+          input.generate_word_count(file_name),
+          input.byte_size(file_name),
+          input.file_name(file_name),
+        ]
+        if @params['l']
+          View.new.print_wc(input_detail, 1)
+        else
+          View.new.print_wc(input_detail, 2)
+        end
+        lines << input_detail[0]
+        words << input_detail[1]
+        bytes << input_detail[2]
+      }
+      total = [lines.sum, words.sum, bytes.sum, "total"]
+      if @params['l']
+        View.new.print_wc(total, 1)
+      else
+        View.new.print_wc(total, 2)
+      end
     end
   end
 end
@@ -50,25 +76,23 @@ class StandardInput
     @standard_input.split(/\R/).size
   end
   def generate_word_count
-    b = @standard_input.split("\n").size
+    words = @standard_input.unpack('H*')
+    words_count = words[0].gsub(/20|0c|0a|0d|09|0b|a0|a0/, ' ')
+    words_count.split(" ").size
   end
   def byte_size
-    std = 0
-    @standard_input.split(/\R/).each{|stdin| std += stdin.bytesize}
-    std
+    @standard_input.bytesize
   end
 end
 
 class InputtedFile
   def generate_number_of_lines(inputted_file = ARGV[0])
-    open(inputted_file){|f|
-      while f.gets; end
-      f.lineno
-    }#行数
+    File.read(inputted_file).count("\n")
   end
   def generate_word_count(inputted_file = ARGV[0])
     file = open(inputted_file).read
     s = file.gsub(/\n/, ' ')
+    s.split(" ")
     s.split(" ").size
   end
   def byte_size(inputted_file = ARGV[0])
@@ -79,38 +103,15 @@ class InputtedFile
   end
 end
 
-class MultiInpttedFile
-  def multi_file_view
-    lines = []
-    words = []
-    bytes = []
-    total = []
-    ARGV.map {|file_name| 
-      input = InputtedFile.new
-      input_detail = [
-        input.generate_number_of_lines(file_name),
-        input.generate_word_count(file_name),
-        input.byte_size(file_name),
-        input.file_name(file_name),
-      ]
-      View.new.print_wc(input_detail)
-      lines << input_detail[0]
-      words << input_detail[1]
-      bytes << input_detail[2]
-    }
-    total = [lines.sum, words.sum, bytes.sum, "total"]
-    View.new.print_wc(total)
-  end
-end
-
-class View < WcCommand
+class View
   def print_wc(array, option)
     if option == 1
-      print array[0].to_s.rjust(8)
+      print " #{array[0].to_s.rjust(7)}"
     elsif
       array.each {|view|
-        print view.to_s.rjust(8)
+        print " #{view.to_s.rjust(7)}"
       }
+      puts ""
     end
   end
 end
@@ -119,4 +120,5 @@ wc = WcCommand.new
 wc.standard_input_or_file
 wc.run
 
-# 本家 ls -l | wc の結果  行24     単語209    バイト1499
+# 本家 ls -l | wc の結果   25     218    1566
+# 本家 wc ls_command.rbの結果  118     250    2508 ls_command.rb
