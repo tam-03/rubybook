@@ -70,7 +70,7 @@ end
 
 class StandardInput
   def initialize
-    @standard_input = $stdin.read#.map {|r| r.split(/\s/) }
+    @standard_input = $stdin.read
   end
   def generate_number_of_lines
     @standard_input.split(/\R/).size
@@ -92,7 +92,6 @@ class InputtedFile
   def generate_word_count(inputted_file = ARGV[0])
     file = open(inputted_file).read
     s = file.gsub(/\n/, ' ')
-    s.split(" ")
     s.split(" ").size
   end
   def byte_size(inputted_file = ARGV[0])
@@ -104,11 +103,11 @@ class InputtedFile
 end
 
 class View
-  def print_wc(array, option)
+  def print_wc(file_or_stdin_array, option)
     if option == 1
-      print " #{array[0].to_s.rjust(7)}"
+      print " #{file_or_stdin_array[0].to_s.rjust(7)} #{file_or_stdin_array[3]}"
     elsif
-      array.each {|view|
+      file_or_stdin_array.each {|view|
         print " #{view.to_s.rjust(7)}"
       }
       puts ""
@@ -119,6 +118,3 @@ end
 wc = WcCommand.new
 wc.standard_input_or_file
 wc.run
-
-# 本家 ls -l | wc の結果   25     218    1566
-# 本家 wc ls_command.rbの結果  118     250    2508 ls_command.rb
